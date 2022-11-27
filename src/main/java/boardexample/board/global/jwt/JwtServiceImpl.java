@@ -28,8 +28,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Setter(value = AccessLevel.PRIVATE)
 public class JwtServiceImpl implements JwtService{
+    // JwtService의 구현체
 
-    //== 1 ==//
+    //== 1 ==// yml 파일에 설정한 값 가져오기 static으로 설정하면 값이 들어오지 않는다.
     @Value("${jwt.secret}")
     private String secret;
     @Value("${jwt.access.expiration}")
@@ -43,7 +44,7 @@ public class JwtServiceImpl implements JwtService{
 
 
 
-    //== 2 ==//
+    //== 2 ==// jwt Bearer 형식 설정
     private static final String ACCESS_TOKEN_SUBJECT = "AccessToken";
     private static final String REFRESH_TOKEN_SUBJECT = "RefreshToken";
     private static final String USERNAME_CLAIM = "username";
@@ -59,11 +60,11 @@ public class JwtServiceImpl implements JwtService{
     //== 3 ==//
     @Override
     public String createAccessToken(String username) {
-        return JWT.create()
-                .withSubject(ACCESS_TOKEN_SUBJECT)
-                .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenValidityInSeconds * 1000))
-                .withClaim(USERNAME_CLAIM, username)
-                .sign(Algorithm.HMAC512(secret));
+        return JWT.create() // 토큰 생성하는 빌더 반환
+                .withSubject(ACCESS_TOKEN_SUBJECT) // 빌더를 통해 JWT의 subject 정함
+                .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenValidityInSeconds * 1000)) // 만료시간 설정, 설정값 * 1000 밀리초
+                .withClaim(USERNAME_CLAIM, username) // 클레임 : username
+                .sign(Algorithm.HMAC512(secret)); // HMAC512 알고리즘을 사용
     }
 
     @Override
@@ -95,6 +96,7 @@ public class JwtServiceImpl implements JwtService{
     }
 
     //== 5 ==//
+    // accessToken과 refreshToken을 헤더와 바디에 둘 다 세팅
     @Override
     public void sendToken(HttpServletResponse response, String accessToken, String refreshToken) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
@@ -113,6 +115,20 @@ public class JwtServiceImpl implements JwtService{
         response.getWriter().write(token);
     }
 
+    @Override
+    public void sendAccessAndRefreshToken(HttpServletResponse response, String accessToken, String refreshToken){
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        setAccessTokenHeader(response, accessToken);
+        setRefreshTokenHeader(response, refreshToken);
+
+
+        Map<String, String> tokenMap = new HashMap<>();
+        tokenMap.put(ACCESS_TOKEN_SUBJECT, accessToken);
+        tokenMap.put(REFRESH_TOKEN_SUBJECT, refreshToken);
+
+    }
+
 
     @Override
     public String extractAccessToken(HttpServletRequest request) throws IOException, ServletException {
@@ -127,7 +143,11 @@ public class JwtServiceImpl implements JwtService{
     //== 4 ==//
     @Override
     public String extractUsername(String accessToken) {
-        return JWT.require(Algorithm.HMAC512(secret)).build().verify(accessToken).getClaim(USERNAME_CLAIM).asString();
+        return JWT.require(Algorithm.HMAC512(secret)) // JWT verifier builder를 반환
+                .build() // 반환된 빌더로 JWT verifier를 생성
+                .verify(accessToken) //accessToken을 검증하고 유효하지 않다면 예외를 발생
+                .getClaim(USERNAME_CLAIM) //claim을 가져옴
+                .asString();
 
     }
 

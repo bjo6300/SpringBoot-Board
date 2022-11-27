@@ -23,6 +23,7 @@ public interface JwtService {
 
     String extractUsername(String accessToken);
 
+    void sendAccessAndRefreshToken(HttpServletResponse response, String accessToken, String refreshToken);
     void setAccessTokenHeader(HttpServletResponse response, String accessToken);
     void setRefreshTokenHeader(HttpServletResponse response, String refreshToken);
 }
