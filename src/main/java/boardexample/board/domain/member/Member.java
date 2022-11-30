@@ -1,9 +1,18 @@
 package boardexample.board.domain.member;
 
 import boardexample.board.domain.BaseTimeEntity;
+import boardexample.board.domain.comment.Comment;
+import boardexample.board.domain.post.Post;
 import lombok.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import javax.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static javax.persistence.CascadeType.ALL;
+import static javax.persistence.EnumType.STRING;
+import static javax.persistence.GenerationType.IDENTITY;
 
 @Table(name = "MEMBER")
 @Getter
@@ -13,7 +22,7 @@ import javax.persistence.*;
 @Builder
 public class Member extends BaseTimeEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = IDENTITY)
     @Column(name = "member_id")
     private Long id; //primary Key
 
@@ -31,7 +40,8 @@ public class Member extends BaseTimeEntity {
     @Column(nullable = false, length = 30)
     private Integer age;//나이
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(STRING)
+    @Column(nullable = false, length = 30)
     private Role role;//권한 -> USER, ADMIN
 
 
@@ -39,8 +49,23 @@ public class Member extends BaseTimeEntity {
     private String refreshToken;//RefreshToken
 
 
+    //== 회원탈퇴 -> 작성한 게시물, 댓글 모두 삭제 ==//
+    @OneToMany(mappedBy = "writer", cascade = ALL, orphanRemoval = true)
+    private List<Post> postList = new ArrayList<>();
 
+    @OneToMany(mappedBy = "writer", cascade = ALL, orphanRemoval = true)
+    private List<Comment> commentList = new ArrayList<>();
 
+    //== 연관관계 메서드 ==//
+    public void addPost(Post post){
+        //post의 writer 설정은 post에서 함
+        postList.add(post);
+    }
+
+    public void addComment(Comment comment){
+        //comment의 writer 설정은 comment에서 함
+        commentList.add(comment);
+    }
 
     //== 정보 수정 ==//
     public void updatePassword(PasswordEncoder passwordEncoder, String password){
@@ -62,7 +87,6 @@ public class Member extends BaseTimeEntity {
     public void updateRefreshToken(String refreshToken){
         this.refreshToken = refreshToken;
     }
-
     public void destroyRefreshToken(){
         this.refreshToken = null;
     }
