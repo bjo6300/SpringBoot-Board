@@ -1,0 +1,16 @@
+package boardexample.board.domain.comment.service;
+
+import boardexample.board.domain.comment.Comment;
+
+import java.util.List;
+
+public interface CommentService {
+    void save(Comment comment);
+
+    Comment findById(Long id) throws Exception;
+
+    List<Comment> findAll();
+
+    void remove(Long id) throws Exception;
+
+}

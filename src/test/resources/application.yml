@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: application-jwt.yml
 
   profiles:
     include: jwt
