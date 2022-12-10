@@ -1,4 +1,5 @@
 package boardexample.board.global.login;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.http.MediaType.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -14,6 +15,7 @@ import boardexample.board.domain.member.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -53,6 +55,11 @@ class LoginTest {
     private static String PASSWORD = "123456789";
 
     private static String LOGIN_RUL = "/login";
+
+    @Value("${jwt.access.header}")
+    private String accessHeader;
+    @Value("${jwt.refresh.header}")
+    private String refreshHeader;
 
 
     private void clear() {
@@ -120,14 +127,26 @@ class LoginTest {
     @Test
     public void 로그인_실패_비밀번호틀림() throws Exception {
         //given
-        Map<String, String> map = getUsernamePasswordMap(USERNAME, PASSWORD+"123");
+        Map<String, String> map = new HashMap<>();
+        map.put("username",USERNAME);
+        map.put("password",PASSWORD+"123");
 
 
         //when
-        MvcResult result = perform(LOGIN_RUL, APPLICATION_JSON, map)
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                        .post(LOGIN_RUL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(map)))
                 .andDo(print())
-                .andExpect(status().isOk())
+                //.andExpect(status().isOk())//TODO 상태코드변경
+                .andExpect(status().isBadRequest())
                 .andReturn();
+
+
+        //then
+        assertThat(result.getResponse().getHeader(accessHeader)).isNull();
+        assertThat(result.getResponse().getHeader(refreshHeader)).isNull();
+
     }
 
 
