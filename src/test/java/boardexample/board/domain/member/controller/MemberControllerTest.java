@@ -9,6 +9,7 @@ import boardexample.board.domain.member.Role;
 import boardexample.board.domain.member.dto.MemberInfoDto;
 import boardexample.board.domain.member.dto.MemberSignUpDto;
 import boardexample.board.domain.member.dto.MemberUpdateDto;
+import boardexample.board.domain.member.exception.MemberExceptionType;
 import boardexample.board.domain.member.repository.MemberRepository;
 import boardexample.board.domain.member.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -490,8 +491,10 @@ class MemberControllerTest {
                 .andExpect(status().isOk()).andReturn();
 
         //then
-        assertThat(result.getResponse().getContentAsString()).isEqualTo("");//빈 문자열
+        Map<String, Integer> map = objectMapper.readValue(result.getResponse().getContentAsString(), Map.class);
+        assertThat(map.get("errorCode")).isEqualTo(MemberExceptionType.NOT_FOUND_MEMBER.getErrorCode());//빈 문자열
     }
+
 
 
 
@@ -514,3 +517,7 @@ class MemberControllerTest {
     }
 
 }
+
+
+
+
