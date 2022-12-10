@@ -16,6 +16,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
+@AllArgsConstructor
+@Builder
 public class Post extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = IDENTITY)
