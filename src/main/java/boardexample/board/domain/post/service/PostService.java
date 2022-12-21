@@ -6,8 +6,8 @@ import boardexample.board.domain.post.dto.PostPagingDto;
 import boardexample.board.domain.post.dto.PostSaveDto;
 import boardexample.board.domain.post.dto.PostUpdateDto;
 import boardexample.board.global.file.exception.FileException;
+import org.springframework.data.domain.Pageable;
 
-import java.awt.print.Pageable;
 
 public interface PostService {
 

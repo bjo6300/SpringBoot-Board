@@ -17,9 +17,10 @@ import boardexample.board.global.file.service.FileService;
 import boardexample.board.global.util.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
 
 import javax.transaction.Transactional;
-import java.awt.print.Pageable;
+
 
 import static boardexample.board.domain.post.exception.PostExceptionType.POST_NOT_POUND;
 
@@ -120,7 +121,8 @@ public class PostServiceImpl implements PostService{
 
     @Override
     public PostPagingDto getPostList(Pageable pageable, PostSearchCondition postSearchCondition) {
-        return null;
+
+        return new PostPagingDto(postRepository.search(postSearchCondition, pageable));
     }
 
 }
