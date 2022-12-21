@@ -42,6 +42,9 @@ dependencies {
 	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
 	//querydsl 끝
 
+	//swagger-ui
+	implementation 'org.springdoc:springdoc-openapi-ui:1.6.8'
+
 }
 
 tasks.named('test') {
