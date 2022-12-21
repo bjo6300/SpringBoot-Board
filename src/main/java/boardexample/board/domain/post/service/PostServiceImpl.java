@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.awt.print.Pageable;
 
+import static boardexample.board.domain.post.exception.PostExceptionType.POST_NOT_POUND;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -50,7 +52,7 @@ public class PostServiceImpl implements PostService{
     public void update(Long id, PostUpdateDto postUpdateDto) {
 
         Post post = postRepository.findById(id).orElseThrow(() ->
-                new PostException(PostExceptionType.POST_NOT_POUND));
+                new PostException(POST_NOT_POUND));
 
         checkAuthority(post,PostExceptionType.NOT_AUTHORITY_UPDATE_POST );
 
@@ -73,7 +75,7 @@ public class PostServiceImpl implements PostService{
     public void delete(Long id) {
 
         Post post = postRepository.findById(id).orElseThrow(() ->
-                new PostException(PostExceptionType.POST_NOT_POUND));
+                new PostException(POST_NOT_POUND));
 
         checkAuthority(post,PostExceptionType.NOT_AUTHORITY_DELETE_POST);
 
@@ -93,9 +95,27 @@ public class PostServiceImpl implements PostService{
     }
 
 
+    /**
+     * Post의 id를 통해 Post 조회
+     */
     @Override
     public PostInfoDto getPostInfo(Long id) {
-        return null;
+
+
+        /**
+         * Post + MEMBER 조회 -> 쿼리 1번 발생
+         *
+         * 댓글&대댓글 리스트 조회 -> 쿼리 1번 발생(POST ID로 찾는 것이므로, IN쿼리가 아닌 일반 where문 발생)
+         * (댓글과 대댓글 모두 Comment 클래스이므로, JPA는 구분할 방법이 없어서, 당연히 CommentList에 모두 나오는것이 맞다,
+         * 가지고 온 것을 가지고 우리가 구분지어주어야 한다.)
+         *
+         * 댓글 작성자 정보 조회 -> 배치사이즈를 이용했기때문에 쿼리 1번 혹은 N/배치사이즈 만큼 발생
+         *
+         *
+         */
+        return new PostInfoDto(postRepository.findWithWriterById(id)
+                .orElseThrow(() -> new PostException(POST_NOT_POUND)));
+
     }
 
     @Override

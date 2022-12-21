@@ -1,14 +1,19 @@
 package boardexample.board.post.service;
 
 import boardexample.board.domain.comment.Comment;
+import boardexample.board.domain.comment.dto.CommentInfoDto;
 import boardexample.board.domain.comment.repository.CommentRepository;
+import boardexample.board.domain.member.Member;
 import boardexample.board.domain.member.Role;
 import boardexample.board.domain.member.dto.MemberSignUpDto;
+import boardexample.board.domain.member.repository.MemberRepository;
 import boardexample.board.domain.member.service.MemberService;
 import boardexample.board.domain.post.Post;
+import boardexample.board.domain.post.dto.PostInfoDto;
 import boardexample.board.domain.post.dto.PostSaveDto;
 import boardexample.board.domain.post.dto.PostUpdateDto;
 import boardexample.board.domain.post.exception.PostException;
+import boardexample.board.domain.post.repository.PostRepository;
 import boardexample.board.domain.post.service.PostService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +32,9 @@ import javax.persistence.EntityManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.LongStream;
 
@@ -47,6 +54,13 @@ class PostServiceImplTest {
 
     @Autowired
     private MemberService memberService;
+    @Autowired
+    private MemberRepository memberRepository;
+
+    @Autowired
+    private PostRepository postRepository;
+    @Autowired
+    private CommentRepository commentRepository;
 
     private static final String USERNAME = "username";
     private static final String PASSWORD = "PASSWORD123@@@";
@@ -344,6 +358,96 @@ class PostServiceImplTest {
         setAnotherAuthentication();
         Post findPost = em.createQuery("select p from Post p", Post.class).getSingleResult();
         assertThrows(PostException.class, ()-> postService.delete(findPost.getId()));
+    }
+
+    @Test
+    public void 포스트_조회() throws Exception {
+        Member member1 = memberRepository.save(Member.builder().username("username1").password("1234567890").name("USER1").nickName("밥 잘먹는 동훈이1").role(Role.USER).age(22).build());
+        Member member2 = memberRepository.save(Member.builder().username("username2").password("1234567890").name("USER1").nickName("밥 잘먹는 동훈이2").role(Role.USER).age(22).build());
+        Member member3 = memberRepository.save(Member.builder().username("username3").password("1234567890").name("USER1").nickName("밥 잘먹는 동훈이3").role(Role.USER).age(22).build());
+        Member member4 = memberRepository.save(Member.builder().username("username4").password("1234567890").name("USER1").nickName("밥 잘먹는 동훈이4").role(Role.USER).age(22).build());
+        Member member5 = memberRepository.save(Member.builder().username("username5").password("1234567890").name("USER1").nickName("밥 잘먹는 동훈이5").role(Role.USER).age(22).build());
+
+        Map<Integer, Long> memberIdMap = new HashMap<>();
+        memberIdMap.put(1,member1.getId());
+        memberIdMap.put(2,member2.getId());
+        memberIdMap.put(3,member4.getId());
+        memberIdMap.put(4,member4.getId());
+        memberIdMap.put(5,member5.getId());
+
+
+
+        /**
+         * Post 생성
+         */
+
+        Post post = Post.builder().title("게시글").content("내용").build();
+        post.confirmWriter(member1);
+        postRepository.save(post);
+        em.flush();
+
+
+        /**
+         * Comment 생성(댓글)
+         */
+
+        final int COMMENT_COUNT = 10;
+
+        for(int i = 1; i<=COMMENT_COUNT; i++ ){
+            Comment comment = Comment.builder().content("댓글" + i).build();
+            comment.confirmWriter(memberRepository.findById(memberIdMap.get(i % 3 + 1)).orElse(null));
+            comment.confirmPost(post);
+            commentRepository.save(comment);
+        }
+
+
+
+
+
+
+        /**
+         * ReComment 생성(대댓글)
+         */
+        final int COMMENT_PER_RECOMMENT_COUNT = 20;
+        commentRepository.findAll().stream().forEach(comment -> {
+
+            for(int i = 1; i<=20; i++ ){
+                Comment recomment = Comment.builder().content("대댓글" + i).build();
+                recomment.confirmWriter(memberRepository.findById(memberIdMap.get(i % 3 + 1)).orElse(null));
+
+                recomment.confirmPost(comment.getPost());
+                recomment.confirmParent(comment);
+                commentRepository.save(recomment);
+            }
+
+        });
+
+
+
+        clear();
+
+
+
+
+        //when
+        PostInfoDto postInfo = postService.getPostInfo(post.getId());
+
+
+
+        //then
+        assertThat(postInfo.getPostId()).isEqualTo(post.getId());
+        assertThat(postInfo.getContent()).isEqualTo(post.getContent());
+        assertThat(postInfo.getWriterDto().getUsername()).isEqualTo(post.getWriter().getUsername());
+
+
+        int recommentCount = 0;
+        for (CommentInfoDto commentInfoDto : postInfo.getCommentInfoDtoList()) {
+            recommentCount += commentInfoDto.getReCommentListDtoList().size();
+        }
+
+        assertThat(postInfo.getCommentInfoDtoList().size()).isEqualTo(COMMENT_COUNT);
+        assertThat(recommentCount).isEqualTo(COMMENT_PER_RECOMMENT_COUNT * COMMENT_COUNT);
+
     }
 
 }
